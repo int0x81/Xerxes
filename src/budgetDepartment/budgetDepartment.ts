@@ -1,3 +1,5 @@
+import { XerxesContext } from "xerxesContext";
+
 /**
  * Keeps track of all available resources (e.g. energy) and
  * calculates the budgets for the individual departments.
@@ -19,6 +21,8 @@ export class BudgetDepartment {
      * All spendings created in the current tick
      */
     private spendings: number = 0;
+
+    constructor(private context: XerxesContext) {}
 
     /**
      * Initialize all budgets
