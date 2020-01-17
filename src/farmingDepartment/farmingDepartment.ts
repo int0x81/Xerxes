@@ -18,12 +18,14 @@ export class FarmingDepartment extends Department{
         this.jobAdvisor = new FarmingJobAdvisor(context);
     }
 
-    /**
-     * The farming department performs its actions
-     */
+    getMinimumOperationalEnergyBudget() {
+        
+        return 200; //The value you need to create a creep with the body parts MOVE, WORK AND CARRY
+    }
+
     run() {
 
-        let budget: number = this.context.budgetDepartment.getFarmingBudget();
+        let budget: number = this.context.budgetDepartment.requestFarmingEnergyBudget();
 
         //the budget is currently only used for the creation of new creeps 
         this.creepsFabric.run(budget);

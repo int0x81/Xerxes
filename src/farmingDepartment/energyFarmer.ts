@@ -1,3 +1,5 @@
+import { EnergyFarmerMemory } from "./energyFarmerMemory";
+
 /**
  * Represents a creep with the task of farming energy
  */
@@ -12,7 +14,10 @@ export class EnergyFarmer {
      * Gets the spawn where this creep is assigned to
      */
     getAssignedSpawn(): StructureSpawn {
-        throw Error("Method not implemented");
+        
+        let spawnId: string = (this.creep.memory as EnergyFarmerMemory).assignedSpawnId;
+        let spawn: StructureSpawn = Game.getObjectById(spawnId) as StructureSpawn;
+        return spawn;
     }
 
     /**
@@ -21,7 +26,7 @@ export class EnergyFarmer {
      * assigned to
      */
     setAssignedSpawn(assignedSpawn: StructureSpawn) {
-        this.creep.memory["assignedSpawnId"] = assignedSpawn.id;
+        (this.creep.memory as EnergyFarmerMemory).assignedSpawnId;
     }
 
     /**
@@ -29,7 +34,7 @@ export class EnergyFarmer {
      */
     getTargetingEnergySource(): Source {
         
-        let sourceId: string = this.creep.memory["targetingEnergySourceId"];
+        let sourceId: string = (this.creep.memory as EnergyFarmerMemory).targetingEnergySourceId;
         let source: Source = Game.getObjectById(sourceId) as Source;
         return source;
     }
@@ -39,7 +44,7 @@ export class EnergyFarmer {
      * @param source The energy source
      */
     setTargetingEnergySource(source: Source) {
-        this.creep.memory["targetingEnergySourceId"] = source.id;
+        (this.creep.memory as EnergyFarmerMemory).targetingEnergySourceId = source.id;
     }
 
     /**
@@ -48,7 +53,7 @@ export class EnergyFarmer {
      * creep will bring back the farmed energy
      */
     getFarmingMode(): boolean {
-        return this.creep.memory["farmingMode"];
+        return (this.creep.memory as EnergyFarmerMemory).farmingMode;
     }
   
     /**
@@ -57,6 +62,6 @@ export class EnergyFarmer {
      * creep will bring back the farmed energy
     */
     toggleFarmingMode() {
-        this.creep.memory["farmingMode"] = !this.creep.memory["farmingMode"];
+        (this.creep.memory as EnergyFarmerMemory).farmingMode = !(this.creep.memory as EnergyFarmerMemory).farmingMode;
     }
 }

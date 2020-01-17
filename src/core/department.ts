@@ -1,9 +1,17 @@
+import { XerxesContext } from "xerxesContext";
+
 /**
  * The base class for all departments
  */
 export abstract class Department {
 
     constructor(protected context: XerxesContext) {}
+
+    /**
+     * Gets the smallest amount of energy that this
+     * department needs to operate properly
+     */
+    abstract getMinimumOperationalEnergyBudget(): number;
 
     /**
      * The department performs its actions and 

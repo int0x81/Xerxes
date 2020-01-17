@@ -5,7 +5,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   let context: XerxesContext = new XerxesContext();
 
-  context.budgetDepartment.initialize();
+  context.budgetDepartment.run();
+  context.farmingDepartment.run();
   context.budgetDepartment.storeBudgetData();
-
 });

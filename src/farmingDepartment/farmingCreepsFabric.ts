@@ -1,4 +1,6 @@
 import { XerxesContext } from "xerxesContext";
+import { Baptizer } from "core/baptizer";
+import { CreepBodyCreationResult } from "core/creepBodyCreationResult";
 
 /**
  * The farming creeps fabric is responsible for
@@ -36,7 +38,11 @@ export class FarmingCreepsFabric {
      */
     private spawnEnergyFarmer(energy: number, spawn: StructureSpawn) {
 
-        throw Error("Method not implemented");
+        let bodyCreationResult: CreepBodyCreationResult = this.createEnergyFarmerBody(energy);
+        let name: string = new Baptizer().getName();
+        
+        if(spawn.spawnCreep(bodyCreationResult.bodyParts, name) == OK)
+            this.context.budgetDepartment.chargeFarmingEnergyBudget(bodyCreationResult.energySpent);
     }
 
     /**
@@ -46,7 +52,7 @@ export class FarmingCreepsFabric {
      */
     private determineEnergyFarmerSpawnTreshhold(): number {
 
-        throw Error("Method not implemented");
+        return 200;
     }
 
     /**
@@ -66,7 +72,7 @@ export class FarmingCreepsFabric {
      * @param energy The energy that shall be spent on the body creation
      * @returns The creep body part
      */
-    private createEnergyFarmerBody(energy: number): BodyPartConstant[] {
+    private createEnergyFarmerBody(energy: number): CreepBodyCreationResult {
 
         throw Error("Method not implemented");
     }

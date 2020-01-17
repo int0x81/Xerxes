@@ -51,6 +51,7 @@
     "typescript": "^2.9.2"
   },
   "dependencies": {
+    "queue-typescript": "^1.0.1",
     "source-map": "~0.6.1"
   }
 }

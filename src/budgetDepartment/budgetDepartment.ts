@@ -1,42 +1,45 @@
 import { XerxesContext } from "xerxesContext";
+import { Department } from "core/department";
+import { Budgets } from "./budgets";
+import { BudgetDepartmentMemory } from "./budgetDepartmentMemory";
 
 /**
  * Keeps track of all available resources (e.g. energy) and
  * calculates the budgets for the individual departments.
  * The departments then can request their budgets
  */
-export class BudgetDepartment {
+export class BudgetDepartment extends Department {
 
-    /**
-     * The energy budget of the farming department
-     */
-    private farmingEnergyBudget: number = 0;
-
-    /**
-     * The energy budget of the maintenance department
-     */
-    private maintenanceEnergyBudget: number = 0;
+    private budgets: Budgets = new Budgets();
 
     /**
      * All spendings created in the current tick
      */
     private spendings: number = 0;
 
-    constructor(private context: XerxesContext) {}
+    constructor(context: XerxesContext) {
+        super(context); 
+    }
 
-    /**
-     * Initialize all budgets
-     */
-    initialize() {
+    getMinimumOperationalEnergyBudget() {
+        return 0;
+    }
+
+    run() {
 
         //1. Load budgets from memory
-        this.loadBudgets();
+        this.budgets.loadBudgets();
 
-        //2. Calculate last ticks income
+        //2. Calculate upper bounds for all budgets
+        this.calculateEnergyBudgetsUpperBounds();
+
+        //3. Calculate last ticks income
         let income: number = this.calculateEnergyIncome();
 
-        //3. Distribute new generated income to all budgets
+        //4. Distribute new generated income to all budgets
         this.distributeEnergy(income);
+
+        //5. Check need for budget shift
     }
 
     /**
@@ -46,14 +49,14 @@ export class BudgetDepartment {
     storeBudgetData() {
         this.saveAmountStoredEnergy();
         this.saveSpendings();
-        this.saveBudgets();
+        this.budgets.saveBudgets();
     }
 
     /**
      * Gets the budget of the farming department
      */
     requestFarmingEnergyBudget(): number {
-        return this.farmingEnergyBudget;
+        return this.budgets.farmingEnergyBudget;
     }
 
     /**
@@ -63,13 +66,13 @@ export class BudgetDepartment {
      */
     chargeFarmingEnergyBudget(charge: number): boolean {
 
-        if(charge > this.farmingEnergyBudget) {
+        if(charge > this.budgets.farmingEnergyBudget) {
             console.warn("Unable to charge farming budget");
             return false;
         }
 
         this.spendings += charge;
-        this.farmingEnergyBudget =- charge;
+        this.budgets.farmingEnergyBudget =- charge;
         return true;
     }
 
@@ -77,7 +80,7 @@ export class BudgetDepartment {
      * Gets the budget of the maintenance department
      */
     requestMaintenanceEnergyBudget(): number {
-        return this.maintenanceEnergyBudget;
+        return this.budgets.maintenanceEnergyBudget;
     }
 
     /**
@@ -87,30 +90,14 @@ export class BudgetDepartment {
      */
     chargeMaintenanceEnergyBudget(charge: number): boolean {
 
-        if(charge > this.maintenanceEnergyBudget) {
+        if(charge > this.budgets.maintenanceEnergyBudget) {
             console.warn("Unable to charge maintenance budget");
             return false;
         }
 
         this.spendings += charge;
-        this.maintenanceEnergyBudget =- charge;
+        this.budgets.maintenanceEnergyBudget =- charge;
         return true;
-    }
-
-    /**
-     * Loads all budgets from memory
-     */
-    private loadBudgets() {
-        this.maintenanceEnergyBudget = Memory["MaintenanceEnergyBudget"];
-        this.farmingEnergyBudget = Memory["FarmingEnergyBudget"];
-    }
-
-    /**
-     * write all budgets to memory
-     */
-    private saveBudgets() {
-        Memory["MaintenanceEnergyBudget"] = this.maintenanceEnergyBudget;
-        Memory["FarmingEnergyBudget"] = this.farmingEnergyBudget;
     }
 
     /**
@@ -152,28 +139,28 @@ export class BudgetDepartment {
      * Loads the total amount of energy spendings of the last tick from memory
      */
     private loadLastTicksEnergySpendings(): number {
-        return Memory["LastTicksEnergySpendings"];
+        return ((Memory as any) as BudgetDepartmentMemory).lastTicksEnergySpendings;
     }
 
     /**
      * Saves the total amount of energy spendings in memory
      */
     private saveSpendings() {
-        Memory["LastTicksEnergySpendings"] = this.spendings;
+        ((Memory as any) as BudgetDepartmentMemory).lastTicksEnergySpendings = this.spendings;
     }
 
     /**
      * Loads the total amount of stored energy of the last tick from memory
      */
     private loadLastTicksStoredEnergy() {
-        return Memory["LastTickStoredEnergy"];
+        return ((Memory as any) as BudgetDepartmentMemory).lastTickStoredEnergy;
     }
 
     /**
      * Saves the total amount of stored energy in memory
      */
     private saveAmountStoredEnergy() {
-        Memory["LastTickStoredEnergy"] = this.getStoredEnergy();
+        ((Memory as any) as BudgetDepartmentMemory).lastTickStoredEnergy = this.getStoredEnergy();
     }
 
     /**
@@ -181,36 +168,58 @@ export class BudgetDepartment {
      * @param energy The energy to distribute 
      */
     private distributeEnergy(energy: number) {
-        
-        //The proportions in percentage
-        const FARMING_PROPORTION: number = 0.5;
-        const MAINTENANCE_PROPORTION: number = 0.5;
 
         //The actual amount of energy that will be added to the budgets
-        let farmingActualIncrease = Math.floor(energy * FARMING_PROPORTION);
-        let maintenanceActualIncrease = Math.floor(energy * MAINTENANCE_PROPORTION);
+        let farmingActualIncrease = Math.floor(energy * this.budgets.FARMING_PROPORTION);
+        let maintenanceActualIncrease = Math.floor(energy * this.budgets.MAINTENANCE_PROPORTION);
 
         //Add energy to budgets
-        this.farmingEnergyBudget += farmingActualIncrease;
-        this.maintenanceEnergyBudget += maintenanceActualIncrease;
+        this.budgets.farmingEnergyBudget += farmingActualIncrease;
+        this.budgets.maintenanceEnergyBudget += maintenanceActualIncrease;
 
         //Distribute the remainding energy
         let remainder = energy - farmingActualIncrease - maintenanceActualIncrease;
-        this.maintenanceEnergyBudget += remainder;
+        this.budgets.maintenanceEnergyBudget += remainder;
+    }
+
+    /**
+     * Checks, if the minimum amount of energy that all departments need
+     * to operate properly, does not exceed the maximum energy storage capacity.
+     * If it does, this method performs a budget shift, so at least one
+     * department can take further actions.
+     * 
+     */
+    private performBudgetShift() {
+        throw Error("Method not implemented");
+    }
+
+    /**
+     * Checks the global energy storage capacity and calculates
+     * the upper limits foreach budget
+     */
+    private calculateEnergyBudgetsUpperBounds() {
+        
+        let globalEnergyCapacity: number = this.context.explorationDepartment.getGlobalEnergyStorageCapacity();
+        
+        this.budgets.maxFarmingEnergyBudget = Math.floor(globalEnergyCapacity * this.budgets.FARMING_PROPORTION);
+        this.budgets.maxMaintenanceEnergyBudget = Math.floor(globalEnergyCapacity * this.budgets.MAINTENANCE_PROPORTION);
+
+        let remainder = globalEnergyCapacity - this.budgets.maxMaintenanceEnergyBudget - this.budgets.maxFarmingEnergyBudget;
+        this.budgets.maxMaintenanceEnergyBudget += remainder;
     }
 
     /**
      * Checks if the sum of all budgets matches the total amount
-     * of stored energy and logs a warning message, if there are any
+     * of stored energy and throws an error, if there are any
      * imbalances
      */
     private checkBudgetCorrectness() {
 
         let storedEnergy: number = this.getStoredEnergy();
 
-        let energyBudgetSum: number = this.farmingEnergyBudget + this.maintenanceEnergyBudget;
+        let energyBudgetSum: number = this.budgets.farmingEnergyBudget + this.budgets.maintenanceEnergyBudget;
 
         if(storedEnergy != energyBudgetSum)
-          console.warn("Budget sum(" + energyBudgetSum +") does not match total amount of stored energy (" + storedEnergy + ")");
+          throw Error("Budget sum(" + energyBudgetSum +") does not match total amount of stored energy (" + storedEnergy + ")");
     }
 }
