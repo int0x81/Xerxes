@@ -2,6 +2,7 @@ import { XerxesContext } from "xerxesContext";
 import { Department } from "core/department";
 import { Budgets } from "./budgets";
 import { BudgetDepartmentMemory } from "./budgetDepartmentMemory";
+import { BudgetShifter } from "./budgetShifter";
 
 /**
  * Keeps track of all available resources (e.g. energy) and
@@ -10,7 +11,11 @@ import { BudgetDepartmentMemory } from "./budgetDepartmentMemory";
  */
 export class BudgetDepartment extends Department {
 
+    /**
+     * The budgets of all departments
+     */
     private budgets: Budgets = new Budgets();
+    private budgetShifter: BudgetShifter = new BudgetShifter(this.context);
 
     /**
      * All spendings created in the current tick
@@ -23,6 +28,10 @@ export class BudgetDepartment extends Department {
 
     getMinimumOperationalEnergyBudget() {
         return 0;
+    }
+
+    getName() {
+        return "BUDGET_DEPARTMENT";
     }
 
     run() {
@@ -39,7 +48,8 @@ export class BudgetDepartment extends Department {
         //4. Distribute new generated income to all budgets
         this.distributeEnergy(income);
 
-        //5. Check need for budget shift
+        //5. Run budget shifter
+        this.budgetShifter.run();
     }
 
     /**
@@ -60,6 +70,13 @@ export class BudgetDepartment extends Department {
     }
 
     /**
+     * Gets the max value that the budget of the farming department can reach
+     */
+    requestFarmingMaxEnergyBudget(): number {
+        return this.budgets.maxMaintenanceEnergyBudget;
+    }
+
+    /**
      * Debits a sum of energy from the farming budget
      * @param charge The amount of energy that the farming budget shall be charged with
      * @returns The state, if the charge was successfull
@@ -72,7 +89,7 @@ export class BudgetDepartment extends Department {
         }
 
         this.spendings += charge;
-        this.budgets.farmingEnergyBudget =- charge;
+        this.budgets.farmingEnergyBudget -= charge;
         return true;
     }
 
@@ -81,6 +98,13 @@ export class BudgetDepartment extends Department {
      */
     requestMaintenanceEnergyBudget(): number {
         return this.budgets.maintenanceEnergyBudget;
+    }
+
+    /**
+     * Gets the max value that the budget of the maintenance department can reach
+     */
+    requestMaintenanceMaxEnergyBudget(): number {
+        return this.budgets.maxMaintenanceEnergyBudget;
     }
 
     /**
@@ -96,7 +120,7 @@ export class BudgetDepartment extends Department {
         }
 
         this.spendings += charge;
-        this.budgets.maintenanceEnergyBudget =- charge;
+        this.budgets.maintenanceEnergyBudget -= charge;
         return true;
     }
 
@@ -183,17 +207,6 @@ export class BudgetDepartment extends Department {
     }
 
     /**
-     * Checks, if the minimum amount of energy that all departments need
-     * to operate properly, does not exceed the maximum energy storage capacity.
-     * If it does, this method performs a budget shift, so at least one
-     * department can take further actions.
-     * 
-     */
-    private performBudgetShift() {
-        throw Error("Method not implemented");
-    }
-
-    /**
      * Checks the global energy storage capacity and calculates
      * the upper limits foreach budget
      */
@@ -220,6 +233,6 @@ export class BudgetDepartment extends Department {
         let energyBudgetSum: number = this.budgets.farmingEnergyBudget + this.budgets.maintenanceEnergyBudget;
 
         if(storedEnergy != energyBudgetSum)
-          throw Error("Budget sum(" + energyBudgetSum +") does not match total amount of stored energy (" + storedEnergy + ")");
+          throw new Error("Budget sum(" + energyBudgetSum +") does not match total amount of stored energy (" + storedEnergy + ")");
     }
 }

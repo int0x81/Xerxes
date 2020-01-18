@@ -23,6 +23,10 @@ export class FarmingDepartment extends Department{
         return 200; //The value you need to create a creep with the body parts MOVE, WORK AND CARRY
     }
 
+    getName() {
+        return "FARMING_DEPARTMENT";
+    }
+
     run() {
 
         let budget: number = this.context.budgetDepartment.requestFarmingEnergyBudget();

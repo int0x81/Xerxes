@@ -1,6 +1,7 @@
 import { Queue } from 'queue-typescript';
 import { XerxesContext } from "xerxesContext";
 import { BudgetDepartmentMemory } from './budgetDepartmentMemory';
+import { DepartmentNames } from 'core/departmentNames';
 
 /**
  * The budget shifter ensures that all departments budgets are not deceeding 
@@ -29,23 +30,122 @@ export class BudgetShifter {
     run() {
 
         //1. Check for undersupplied departments
+        let undersuppliedDepartments = this.checkForUndersuppliedDepartments();
 
-        //2. Remove supplied departments out of the queue
+        //2. Remove supplied departments from queue
+        this.removeSuppliedDepartments();
 
         //3. Enqueue undersupplied departments
+        this.enqueueUndersuppliedDepartments(undersuppliedDepartments);
 
-        //4. Dequeue undersupplied deparment and declare it as next receiver
+        //4. Dequeue undersupplied department and declare it as next receiver
+        let nextReceiver: string = this.undersuppliedDepartments.dequeue();
 
         //5. Check the energy need of the undersupplied department
+        let missingEnergy: number = this.determineRequiredEnergy(nextReceiver);
 
-        //6. Takes the needed energy from other budgets
-
-        //7. Shift the collected energy to the budget of the next receiver
-
-        throw Error("Method not implemented");
+        //6. Shift the collected energy to the budget of the next receiver
+        this.performBudgetShift(nextReceiver, missingEnergy);
     }
 
+    /**
+     * Creates a list of all departments that are currently undersupplied
+     */
     private checkForUndersuppliedDepartments(): string[] {
-        throw Error("Method not implemented");
+        
+        let currentUndersuppliedDepartments: string[] = new Array<string>();
+
+        if(this.context.farmingDepartment.getMinimumOperationalEnergyBudget() > this.context.budgetDepartment.requestFarmingMaxEnergyBudget())
+            currentUndersuppliedDepartments.push(this.context.farmingDepartment.getName());
+           
+        if(this.context.maintenanceDepartment.getMinimumOperationalEnergyBudget() > this.context.budgetDepartment.requestMaintenanceMaxEnergyBudget())
+            currentUndersuppliedDepartments.push(this.context.maintenanceDepartment.getName());
+
+        return currentUndersuppliedDepartments;
+    }
+
+    /**
+     * Removes all departments from the queue, that have a
+     * sufficient budget this tick 
+     */
+    private removeSuppliedDepartments() {
+
+        let newQueue: Queue<string> = new Queue<string>();
+        
+        for(let depName of this.undersuppliedDepartments) {
+
+            if(this.isUndersupplied(depName))
+                newQueue.enqueue(depName);
+        }
+
+        this.undersuppliedDepartments = newQueue;
+    }
+
+    /**
+     * Enqueues all undersupplied departments, if they are not already in the queue
+     * @param departments A list of names of all departments that are undersupplied
+     */
+    private enqueueUndersuppliedDepartments(departments: string[]) {
+        
+        for(let dep of departments) {
+
+            let exists: boolean = false;
+
+            for(let el of this.undersuppliedDepartments) {
+
+                if(dep == el)
+                    exists = true;
+            }
+
+            if(!exists)
+                this.undersuppliedDepartments.enqueue(dep);
+        }
+    }
+
+    /**
+     * Determines the amount of energy, that next receiving undersupplied department
+     * needs to reach the minimal operational budget
+     * @param department The name of the next receiving department
+     * @returns The amount of energy that is needed to reach the minimum operational
+     * budget
+     */
+    private determineRequiredEnergy(department: string): number {
+        
+        switch(department) {
+            case this.context.farmingDepartment.getName(): {
+                return this.context.farmingDepartment.getMinimumOperationalEnergyBudget() - this.context.budgetDepartment.requestFarmingMaxEnergyBudget();
+            }
+            case this.context.maintenanceDepartment.getName(): {
+                return this.context.maintenanceDepartment.getMinimumOperationalEnergyBudget() - this.context.budgetDepartment.requestMaintenanceMaxEnergyBudget();
+            }
+            default: throw new Error("Unable to resolve department name: " + department);
+        }
+    }
+
+    /**
+     * Withdraw energy from all departments budgets and shift it
+     * to the receiving undersupplied departments budget
+     * @param department The name of the receiving, undersupplied department
+     * @param energy The amount of energy, that the department needs to reach
+     * a minimum operational level
+     */
+    private performBudgetShift(department: string, energy: number) {
+        throw new Error("Method not implemented.");
+    }
+
+    /**
+     * Checks if a department with a given name is undersupplied with energy
+     */
+    private isUndersupplied(department: string): boolean {
+        
+        switch(department) {
+            case this.context.farmingDepartment.getName(): {
+                return this.context.farmingDepartment.getMinimumOperationalEnergyBudget() > this.context.budgetDepartment.requestFarmingMaxEnergyBudget();
+            }
+            case this.context.maintenanceDepartment.getName(): {
+                return this.context.maintenanceDepartment.getMinimumOperationalEnergyBudget() > this.context.budgetDepartment.requestMaintenanceMaxEnergyBudget();
+            }
+            default: return false;
+        }
     }
 } 

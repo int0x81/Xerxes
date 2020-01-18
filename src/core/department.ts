@@ -14,6 +14,11 @@ export abstract class Department {
     abstract getMinimumOperationalEnergyBudget(): number;
 
     /**
+     * Gets the departments name
+     */
+    abstract getName(): string;
+
+    /**
      * The department performs its actions and 
      * advises jobs to all of its controlled creeps
      */

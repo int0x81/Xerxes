@@ -15,6 +15,10 @@ export class ExplorationDepartment extends Department {
         return 0;
     }
 
+    getName() {
+        return "EXPLORATION_DEPARTMENT";
+    }
+
     run() {
         throw Error("Method not implemented");
     }
