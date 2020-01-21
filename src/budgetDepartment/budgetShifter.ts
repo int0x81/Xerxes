@@ -1,7 +1,6 @@
 import { Queue } from 'queue-typescript';
 import { XerxesContext } from "xerxesContext";
 import { BudgetDepartmentMemory } from './budgetDepartmentMemory';
-import { DepartmentNames } from 'core/departmentNames';
 
 /**
  * The budget shifter ensures that all departments budgets are not deceeding 
@@ -124,13 +123,42 @@ export class BudgetShifter {
 
     /**
      * Withdraw energy from all departments budgets and shift it
-     * to the receiving undersupplied departments budget
+     * to the receiving undersupplied departments budget. This method currently only
+     * respects the maintenance and the farming budget since they are considered
+     * essential
      * @param department The name of the receiving, undersupplied department
      * @param energy The amount of energy, that the department needs to reach
      * a minimum operational level
      */
     private performBudgetShift(department: string, energy: number) {
-        throw new Error("Method not implemented.");
+
+        switch(department) {
+            case this.context.farmingDepartment.getName(): {
+                if(energy <= this.context.budgetDepartment.requestMaintenanceEnergyBudget()) {
+                    if(this.context.budgetDepartment.chargeMaintenanceEnergyBudget(energy)) {
+                        this.context.budgetDepartment.enterFarmingBudget(energy);
+                    }
+                } else {
+                    let canBeShifted: number = this.context.budgetDepartment.requestMaintenanceEnergyBudget();
+                    if(this.context.budgetDepartment.chargeMaintenanceEnergyBudget(canBeShifted)) {
+                        this.context.budgetDepartment.enterFarmingBudget(canBeShifted);
+                    }
+                }
+            }
+            case this.context.maintenanceDepartment.getName(): {
+                if(energy <= this.context.budgetDepartment.requestFarmingEnergyBudget()) {
+                    if(this.context.budgetDepartment.chargeFarmingEnergyBudget(energy)) {
+                        this.context.budgetDepartment.enterMaintenanceBudget(energy);
+                    }
+                } else {
+                    let canBeShifted: number = this.context.budgetDepartment.requestFarmingEnergyBudget();
+                    if(this.context.budgetDepartment.chargeFarmingEnergyBudget(canBeShifted)) {
+                        this.context.budgetDepartment.enterMaintenanceBudget(canBeShifted);
+                    }
+                }
+            }
+            default: return false;
+        }
     }
 
     /**

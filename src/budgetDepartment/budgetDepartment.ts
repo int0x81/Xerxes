@@ -94,6 +94,13 @@ export class BudgetDepartment extends Department {
     }
 
     /**
+     * Enters an amount of energy in the farming budget
+     */
+    enterFarmingBudget(energy: number) {
+        this.budgets.farmingEnergyBudget++;
+    }
+
+    /**
      * Gets the budget of the maintenance department
      */
     requestMaintenanceEnergyBudget(): number {
@@ -122,6 +129,13 @@ export class BudgetDepartment extends Department {
         this.spendings += charge;
         this.budgets.maintenanceEnergyBudget -= charge;
         return true;
+    }
+
+    /**
+     * Enters an amount of energy in the maintenance budget
+     */
+    enterMaintenanceBudget(energy: number) {
+        this.budgets.maintenanceEnergyBudget++;
     }
 
     /**
