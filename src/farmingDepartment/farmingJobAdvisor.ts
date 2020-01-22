@@ -1,5 +1,6 @@
 import { EnergyFarmer } from './energyFarmer';
 import { XerxesContext } from 'xerxesContext';
+import { EnergyFarmerMemory } from './energyFarmerMemory';
 
 /**
  * The job advisor tells all creeps in the farming department
@@ -20,23 +21,11 @@ export class FarmingJobAdvisor {
 
             if(farmer.creep.store.energy == farmer.creep.store.getCapacity()) {
                 farmer.toggleFarmingMode();
-                this.bringBackEnergy(farmer);
+                this.depositEnergy(farmer);
             } else
                 this.farmEnergy(farmer);
         } else
-            this.bringBackEnergy(farmer);
-    }
-
-    /**
-     * Advises a creep to bring back its energy
-     * @param farmer The energy carryieng creep
-     */
-    private bringBackEnergy(farmer: EnergyFarmer) {
-
-        if(this.isInRoomOfAssignedSpawn(farmer))
             this.depositEnergy(farmer);
-        else 
-            this.moveToRoomOfAssignedSpawn(farmer);
     }
 
     /**
@@ -45,32 +34,30 @@ export class FarmingJobAdvisor {
      */
     private farmEnergy(farmer: EnergyFarmer) {
 
-        if(farmer.getTargetingEnergySource == undefined)
-            farmer.setTargetingEnergySource(this.determineBestEnergySource(farmer.creep.pos));
+        if(farmer.getTargetingEnergySource == undefined) {
+            let source = this.determineBestEnergySource(farmer.creep);
+            if(source != null)
+                farmer.setTargetingEnergySource(source);
+            else
+                console.warn("No energy source found for energy farmer");
+        }
 
         if(farmer.creep.harvest(farmer.getTargetingEnergySource()) == ERR_NOT_IN_RANGE)
             farmer.creep.moveTo(farmer.getTargetingEnergySource());
     }
 
     /**
-     * Checks if a creep is in the same room as
-     * the spawn it is assigned to
-     * @param farmer The creep
+     * Determines a energy source for an energy farmer so it can harvest from there
+     * @param creep The creep, that is looking for energy
+     * @return The energy source that is considered most adequate for the farming creep or null
+     * if no energy source was found
      */
-    private isInRoomOfAssignedSpawn(farmer: EnergyFarmer): boolean {
+    private determineBestEnergySource(creep: Creep): Source | null {
         
-        let assignedSpawn: StructureSpawn = farmer.getAssignedSpawn();
-
-        return assignedSpawn.room.name == farmer.creep.room.name;
-    }
-
-    /**
-     * 
-     * @param position The position of the creep
-     * @return The energy source that is considered most adequate fro the farming creep
-     */
-    private determineBestEnergySource(position: RoomPosition): Source {
-        throw Error("Method not implemented");
+        let sources: Source[] = creep.room.find(FIND_SOURCES);
+        if(sources.length == 0)
+            return null;
+        return sources[0];
     }
 
     /**
@@ -79,14 +66,10 @@ export class FarmingJobAdvisor {
      * @param creep The creep that carries the energy
      */
     private depositEnergy(farmer: EnergyFarmer) {
-        throw Error("Method not implemented");
-    }
 
-    /**
-     * Moves the creep to the room of its assigned spawn
-     * @param creep The creep that carries the energy
-     */
-    private moveToRoomOfAssignedSpawn(farmer: EnergyFarmer) {
-        throw Error("Method not implemented");
+        let spawn: StructureSpawn = Game.getObjectById(((farmer.creep.memory as any) as EnergyFarmerMemory).assignedSpawnId) as StructureSpawn;
+        
+        if(farmer.creep.transfer(spawn, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE)
+            farmer.creep.moveTo(spawn);
     }
 }
