@@ -56,6 +56,15 @@ export class FarmingDepartment extends Department{
      */
     private getAllEnergyFarmers(): EnergyFarmer[] {
 
-        throw Error("Method not implemented");
+        let energyFarmers: EnergyFarmer[] = new Array<EnergyFarmer>();
+
+        for(let i in Game.creeps) {
+
+            if((Game.creeps[i].memory as any)["Role"] == "EnergyFarmer") {
+                energyFarmers.push(new EnergyFarmer(Game.creeps[i]));
+            }
+        }
+
+        return energyFarmers;
     }
 }
