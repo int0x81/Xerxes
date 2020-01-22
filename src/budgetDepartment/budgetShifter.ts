@@ -17,7 +17,7 @@ export class BudgetShifter {
 
     constructor(private context: XerxesContext) {
 
-        this.undersuppliedDepartments = ((Memory as unknown) as BudgetDepartmentMemory).undersuppliedDepartments;
+        this.undersuppliedDepartments = ((Memory as any) as BudgetDepartmentMemory).undersuppliedDepartments;
 
         if(this.undersuppliedDepartments == undefined)
             this.undersuppliedDepartments = new Queue<string>();
