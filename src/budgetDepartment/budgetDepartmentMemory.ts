@@ -9,6 +9,6 @@ export interface BudgetDepartmentMemory {
     farmingEnergyBudget: number;
     
     lastTickStoredEnergy: number;
-    lastTicksEnergySpendings: number;
+    lastTicksEnergySpending: number;
     undersuppliedDepartments: Queue<string>;
 }

@@ -18,9 +18,9 @@ export class BudgetDepartment extends Department {
     private budgetShifter: BudgetShifter = new BudgetShifter(this.context);
 
     /**
-     * All spendings created in the current tick
+     * The total energy spending created in the current tick
      */
-    private spendings: number = 0;
+    private spending: number = 0;
 
     constructor(context: XerxesContext) {
         super(context); 
@@ -58,7 +58,7 @@ export class BudgetDepartment extends Department {
      */
     storeBudgetData() {
         this.saveAmountStoredEnergy();
-        this.saveSpendings();
+        this.saveSpending();
         this.budgets.saveBudgets();
     }
 
@@ -88,7 +88,7 @@ export class BudgetDepartment extends Department {
             return false;
         }
 
-        this.spendings += charge;
+        this.spending += charge;
         this.budgets.farmingEnergyBudget -= charge;
         return true;
     }
@@ -117,7 +117,7 @@ export class BudgetDepartment extends Department {
     /**
      * Debits a sum of energy from the maintenance budget
      * @param charge The amount of energy that the maintenance budget shall be charged with
-     * @returns The state, if the charge was successfull
+     * @returns The state, if the charge was successful
      */
     chargeMaintenanceEnergyBudget(charge: number): boolean {
 
@@ -126,7 +126,7 @@ export class BudgetDepartment extends Department {
             return false;
         }
 
-        this.spendings += charge;
+        this.spending += charge;
         this.budgets.maintenanceEnergyBudget -= charge;
         return true;
     }
@@ -145,10 +145,10 @@ export class BudgetDepartment extends Department {
     private calculateEnergyIncome(): number {
 
         let storedEnergy: number = this.getStoredEnergy();
-        let lastTickSpendings = this.loadLastTicksEnergySpendings();
+        let lastTickSpending = this.loadLastTicksEnergySpending();
         let lastTickStoredEnergy = this.loadLastTicksStoredEnergy();
 
-        let lastTicksIncome: number = storedEnergy + lastTickSpendings - lastTickStoredEnergy;
+        let lastTicksIncome: number = storedEnergy + lastTickSpending - lastTickStoredEnergy;
         return lastTicksIncome;
     }
 
@@ -174,17 +174,17 @@ export class BudgetDepartment extends Department {
     }
 
     /**
-     * Loads the total amount of energy spendings of the last tick from memory
+     * Loads the total amount of energy spending of the last tick from memory
      */
-    private loadLastTicksEnergySpendings(): number {
-        return ((Memory as any) as BudgetDepartmentMemory).lastTicksEnergySpendings;
+    private loadLastTicksEnergySpending(): number {
+        return ((Memory as any) as BudgetDepartmentMemory).lastTicksEnergySpending;
     }
 
     /**
-     * Saves the total amount of energy spendings in memory
+     * Saves the total amount of energy spending in memory
      */
-    private saveSpendings() {
-        ((Memory as any) as BudgetDepartmentMemory).lastTicksEnergySpendings = this.spendings;
+    private saveSpending() {
+        ((Memory as any) as BudgetDepartmentMemory).lastTicksEnergySpending = this.spending;
     }
 
     /**
